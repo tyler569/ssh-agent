@@ -5,10 +5,10 @@ import com.pygostylia.sshagent.serialization.SshProtocolWriter
 import java.nio.ByteBuffer
 import java.security.{PrivateKey, PublicKey}
 
-abstract class KeySpec {
+trait KeySpec {
   protected val comment: String
 
-  def keyBlob: Array[Byte]
+  def keyBlob: ByteBuffer
 
   def keyType: String
 

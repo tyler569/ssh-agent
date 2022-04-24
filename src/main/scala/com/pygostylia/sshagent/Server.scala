@@ -17,10 +17,11 @@ object Server {
   def main(args: Array[String]): Unit = {
     val filename = "./socket"
 
-    val bindAddress = UnixDomainSocketAddress.of(Path.of(filename))
+    val path = Path.of(filename)
+    val bindAddress = UnixDomainSocketAddress.of(path)
     val serverSocket = ServerSocketChannel.open(StandardProtocolFamily.UNIX)
     serverSocket.bind(bindAddress)
-    File(filename).deleteOnExit()
+    path.toFile.deleteOnExit()
 
     println(s"Listening on $filename")
 
@@ -54,8 +55,7 @@ object Server {
       key.encodePubKey(packet)
     }
 
-    val data = packet.array()
-    conn.send(data)
+    conn.send(packet.done())
   }
 
   def addKey(p: AddKeyPacket, conn: Connection): Unit = {
@@ -66,7 +66,11 @@ object Server {
   def signRequest(packet: SignReqPacket, conn: Connection): Unit = {
     val sign = packet.signature()
 
-    val signingKey: Option[KeySpec] = keys.find { key => key.keyBlob sameElements packet.keyBlob }
+    // Signing key find debug
+    // keys.foreach { key => println(bufferView(key.keyBlob).mkString("have: <<", ", ", ">>")) }
+    // println(packet.keyBlob.mkString("want: <<", ", ", ">>"))
+
+    val signingKey: Option[KeySpec] = keys.find { key => bufferView(key.keyBlob) sameElements packet.keyBlob }
 
     if (signingKey.isEmpty) {
       conn.sendFailure()
@@ -86,8 +90,8 @@ object Server {
     blob.writeString(packet.signatureMethod)
     blob.writeBytes(signature)
 
-    buffer.writeBytes(blob.array())
+    buffer.writeBytes(blob.done())
 
-    conn.send(buffer.array())
+    conn.send(buffer.done())
   }
 }

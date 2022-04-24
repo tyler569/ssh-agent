@@ -26,20 +26,22 @@ class Connection(channel: SocketChannel) {
     }
   }
 
-  def send(data: Array[Byte]): Unit = {
+  def send(data: ByteBuffer): Unit = {
     val lenBuffer = ByteBuffer.allocate(4)
-    lenBuffer.putInt(data.length)
-    lenBuffer.rewind()
+    lenBuffer.putInt(data.limit())
+    lenBuffer.flip()
     channel.write(lenBuffer)
-    println(s"sending: ${data.mkString("<<", ", ", ">>")}")
-    channel.write(ByteBuffer.wrap(data))
+    println(s"sending: ${data.array().view.slice(data.position(), data.limit()).mkString("<<", ", ", ">>")}")
+    while (data.remaining() > 0) {
+      channel.write(data)
+    }
   }
 
   def sendSuccess(): Unit = {
-    send(Array(Packet.SSH_AGENT_SUCCESS))
+    send(ByteBuffer.wrap(Array(Packet.SSH_AGENT_SUCCESS)))
   }
 
   def sendFailure(): Unit = {
-    send(Array(Packet.SSH_AGENT_FAILURE))
+    send(ByteBuffer.wrap(Array(Packet.SSH_AGENT_FAILURE)))
   }
 }

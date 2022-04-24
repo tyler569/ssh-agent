@@ -38,11 +38,11 @@ class RsaKeySpec(reader: SshProtocolReader) extends KeySpec {
 
   override def publicKey: PublicKey = rsaPubKey
 
-  override def keyBlob: Array[Byte] = {
+  override def keyBlob: ByteBuffer = {
     val blob = SshProtocolWriter()
     blob.writeString(keyType)
     blob.writeMpInt(e)
     blob.writeMpInt(n)
-    blob.array()
+    blob.done()
   }
 }

@@ -10,6 +10,11 @@ class SshProtocolWriter(buffer: ByteBuffer) {
     buffer.put(bytes)
   }
 
+  def writeBytes(bytes: ByteBuffer): Unit = {
+    buffer.putInt(bytes.limit())
+    buffer.put(bytes)
+  }
+
   def writeString(str: String): Unit = {
     buffer.putInt(str.length)
     buffer.put(str.getBytes)
@@ -25,5 +30,12 @@ class SshProtocolWriter(buffer: ByteBuffer) {
 
   def writeInt(v: Int): Unit = buffer.putInt(v)
 
-  def array(): Array[Byte] = buffer.array().slice(0, buffer.position())
+  def done(): ByteBuffer = {
+    buffer.flip()
+    buffer
+  }
+}
+
+object SshProtocolWriter {
+  def withCapacity(capacity: Int): SshProtocolWriter = SshProtocolWriter(ByteBuffer.allocate(capacity))
 }

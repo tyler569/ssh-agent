@@ -4,7 +4,7 @@ import com.pygostylia.sshagent.keys.KeySpec
 import com.pygostylia.sshagent.packets.{AddKeyPacket, ListKeysPacket, Packet, SignReqPacket}
 import com.pygostylia.sshagent.serialization.SshProtocolWriter
 
-import java.io.File
+import java.io.{File, IOException}
 import java.net.{StandardProtocolFamily, UnixDomainSocketAddress}
 import java.nio.ByteBuffer
 import java.nio.channels.ServerSocketChannel
@@ -26,23 +26,25 @@ object Server {
     println(s"Listening on $filename")
 
     while (true) {
-      val channel = serverSocket.accept()
-      val conn = Connection(channel)
-      println("Client connected")
-
-      var done = false
-
-      while (conn.open && !done) {
-        val packet = conn.recv()
-        println(packet)
-        packet match {
-          case _: ListKeysPacket => listKeys(conn)
-          case p: AddKeyPacket => addKey(p, conn)
-          case p: SignReqPacket => signRequest(p, conn)
-          case null => done = true
-          case _ => conn.sendFailure()
+      val socket = serverSocket.accept()
+      val conn = new Connection(socket)
+      Thread(new Runnable {
+        def run(): Unit = try {
+          while (true) {
+            val packet = conn.recv()
+            println(packet)
+            packet match {
+              case _: ListKeysPacket => listKeys(conn)
+              case p: AddKeyPacket => addKey(p, conn)
+              case p: SignReqPacket => signRequest(p, conn)
+              case null => return;
+              case _ => conn.sendFailure()
+            }
+          }
+        } catch {
+          case _: IOException =>
         }
-      }
+      }).run()
     }
   }
 

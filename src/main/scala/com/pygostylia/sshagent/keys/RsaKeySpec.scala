@@ -1,11 +1,12 @@
 package com.pygostylia.sshagent.keys
 
 import com.pygostylia.sshagent.keys.KeySpec
+import com.pygostylia.sshagent.packets.SignReqPacket
 import com.pygostylia.sshagent.serialization.{SshProtocolReader, SshProtocolWriter}
 
 import java.nio.ByteBuffer
 import java.security.spec.{RSAPrivateKeySpec, RSAPublicKeySpec}
-import java.security.{KeyFactory, PrivateKey, PublicKey}
+import java.security.{KeyFactory, PrivateKey, PublicKey, Signature}
 
 class RsaKeySpec(reader: SshProtocolReader) extends KeySpec {
   private val n: BigInt = reader.readMpInt()
@@ -30,7 +31,7 @@ class RsaKeySpec(reader: SshProtocolReader) extends KeySpec {
 
   override def keyType: String = "ssh-rsa"
 
-  override def toString: String = s"RsaKeySpec(...)"
+  override def toString: String = s"RsaKeySpec($e, $n)"
 
   // override def sign(data: Array[Byte], signatureType?): Array[Byte] // ?
 
@@ -44,5 +45,12 @@ class RsaKeySpec(reader: SshProtocolReader) extends KeySpec {
     blob.writeMpInt(e)
     blob.writeMpInt(n)
     blob.done()
+  }
+
+  def signature(flags: Int): (Signature, String) = {
+    flags & 0x07 match {
+      case SignReqPacket.SSH_AGENT_RSA_SHA2_256 => (Signature.getInstance("SHA256WithRSA"), "rsa-sha2-256")
+      case SignReqPacket.SSH_AGENT_RSA_SHA2_512 => (Signature.getInstance("SHA512WithRSA"), "rsa-sha2-512")
+    }
   }
 }

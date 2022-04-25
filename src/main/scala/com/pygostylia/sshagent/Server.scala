@@ -61,13 +61,15 @@ object Server {
   }
 
   def addKey(p: AddKeyPacket, conn: Connection): Unit = {
-    keys.addOne(p.key)
-    conn.sendSuccess()
+    p.key.match {
+      case Some(k) =>
+        keys.addOne(k)
+        conn.sendSuccess()
+      case None => conn.sendFailure()
+    }
   }
 
   def signRequest(packet: SignReqPacket, conn: Connection): Unit = {
-    val sign = packet.signature()
-
     // Signing key find debug
     // keys.foreach { key => println(bufferView(key.keyBlob).mkString("have: <<", ", ", ">>")) }
     // println(packet.keyBlob.mkString("want: <<", ", ", ">>"))
@@ -81,6 +83,8 @@ object Server {
 
     val key = signingKey.get
 
+    val (sign, method) = key.signature(packet.flags)
+
     val buffer = SshProtocolWriter()
     sign.initSign(key.privateKey)
     sign.update(packet.signData)
@@ -89,7 +93,7 @@ object Server {
     buffer.write(Packet.SSH_AGENT_SIGN_RESPONSE)
 
     val blob = SshProtocolWriter()
-    blob.writeString(packet.signatureMethod)
+    blob.writeString(method)
     blob.writeBytes(signature)
 
     buffer.writeBytes(blob.done())

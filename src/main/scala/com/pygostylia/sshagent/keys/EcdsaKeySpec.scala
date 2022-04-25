@@ -20,7 +20,8 @@ class EcdsaKeySpec(reader: SshProtocolReader) extends KeySpec {
     blob.writeString(keyType)
     blob.writeString(curveName)
     // blob.writeBytes(publicEcdsaKey.getEncoded) // FIXME format?
-    blob.writeBytes(q)
+    // blob.writeBytes(q)
+    blob.writeBytes(encodedPoint)
     blob.done()
   }
 
@@ -32,9 +33,8 @@ class EcdsaKeySpec(reader: SshProtocolReader) extends KeySpec {
 
   private val qComponents = {
     if (q(0) != 4) throw new RuntimeException("Cannot handle compressed points")
-    val qs = q.view.slice(1, q.length).splitAt(q.length / 2)
-    qs match {
-      case (x, y) => (BigInt(x.toArray), BigInt(y.toArray))
+    q.slice(1, q.length).splitAt(q.length / 2) match {
+      case (x, y) => (BigInt(x), BigInt(y))
     }
   }
 
@@ -54,9 +54,18 @@ class EcdsaKeySpec(reader: SshProtocolReader) extends KeySpec {
 
   private val privateEcdsaKey = keyFactory.generatePrivate(privateEcdsaKeySpec)
 
+  private val ecPoint = ECPoint(qComponents(0).bigInteger, qComponents(1).bigInteger)
+
+  private def encodedPoint: ByteBuffer = {
+    val blob = SshProtocolWriter()
+    blob.write(4)
+    blob.writeBytesRaw(ecPoint.getAffineX.toByteArray)
+    blob.writeBytesRaw(ecPoint.getAffineY.toByteArray)
+    blob.done()
+  }
+
   private val publicEcdsaKey = {
-    val point = ECPoint(qComponents(0).bigInteger, qComponents(1).bigInteger)
-    val keySpec = ECPublicKeySpec(point, ecParameterSpec)
+    val keySpec = ECPublicKeySpec(ecPoint, ecParameterSpec)
     keyFactory.generatePublic(keySpec)
   }
 

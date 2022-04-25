@@ -88,7 +88,23 @@ object Server {
     val buffer = SshProtocolWriter()
     sign.initSign(key.privateKey)
     sign.update(packet.signData)
-    val signature = sign.sign()
+    var signature = sign.sign()
+
+    // Super hacky; we should probably move sign() into KeySpec implementations
+    // if the encodings are going to be so different.
+    if (method.startsWith("ecdsa")) {
+      val startR = if ((signature(1) & 0x80) != 0) 3 else 2
+      val lengthR = signature(startR + 1)
+      val startS = startR + 2 + lengthR
+      val lengthS = signature(startS + 1)
+      val r = BigInt(signature.slice(startR + 2, startR + 2 + lengthR))
+      val s = BigInt(signature.slice(startS + 2, startS + 2 + lengthS))
+
+      val sigblob = SshProtocolWriter()
+      sigblob.writeMpInt(r.bigInteger)
+      sigblob.writeMpInt(s.bigInteger)
+      signature = sigblob.array()
+    }
 
     buffer.write(Packet.SSH_AGENT_SIGN_RESPONSE)
 

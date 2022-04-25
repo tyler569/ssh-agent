@@ -3,6 +3,8 @@ package com.pygostylia.sshagent.serialization
 import java.nio.ByteBuffer
 
 class SshProtocolWriter(buffer: ByteBuffer) {
+  var isDone = false
+
   def this() = this(ByteBuffer.allocate(4096))
 
   def writeBytes(bytes: Array[Byte]): Unit = {
@@ -28,11 +30,22 @@ class SshProtocolWriter(buffer: ByteBuffer) {
 
   def write(v: Byte): Unit = buffer.put(v)
 
+  def writeBytesRaw(bytes: Array[Byte]): Unit = buffer.put(bytes)
+
   def writeInt(v: Int): Unit = buffer.putInt(v)
 
   def done(): ByteBuffer = {
+    if (isDone) throw RuntimeException("Cannot done() a completed writer")
     buffer.flip()
+    isDone = true
     buffer
+  }
+
+  def array(): Array[Byte] = {
+    if (isDone)
+      buffer.array.slice(0, buffer.limit())
+    else
+      buffer.array.slice(0, buffer.position())
   }
 }
 

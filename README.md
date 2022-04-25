@@ -26,7 +26,7 @@ so to use it:
 
 In one terminal;
 ```
-ssh-agent $ sbt run
+~/ssh-agent $ sbt run
 [info] welcome to sbt 1.6.2 (Homebrew Java 18)
 [info] loading global plugins from /Users/user/.sbt/1.0/plugins
 [info] loading project definition from /Users/user/ssh-agent/project
@@ -47,7 +47,7 @@ user@some-other-machine ~ $
 ```
 
 This project supports only a small set of ssh-agent features,
-it only supports RSA keys and signatures,
+it only support RSA and ECDSA keys,
 as well as not supporting agent locking, tokens, constraints, lifetimes,
 extensions, or removing keys from the agent.
 

@@ -47,13 +47,10 @@ user@some-other-machine ~ $
 ```
 
 This project supports only a small set of ssh-agent features,
-it only support RSA and ECDSA keys,
-as well as not supporting agent locking, tokens, constraints, lifetimes,
+not including agent locking, tokens, constraints, lifetimes,
 extensions, or removing keys from the agent.
 
 ## References
 
 Protocol documentation:
 [SSH Agent Protocol](https://tools.ietf.org/id/draft-miller-ssh-agent-01.html)
-
-

@@ -101,8 +101,8 @@ object Server {
       val s = BigInt(signature.slice(startS + 2, startS + 2 + lengthS))
 
       val sigblob = SshProtocolWriter()
-      sigblob.writeMpInt(r.bigInteger)
-      sigblob.writeMpInt(s.bigInteger)
+      sigblob.writeMpInt(r)
+      sigblob.writeMpInt(s)
       signature = sigblob.array()
     }
 
